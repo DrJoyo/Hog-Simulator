@@ -1,6 +1,4 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -9,19 +7,53 @@ public class HogSimulator {
     private int winScore;
     private int maxDice;
     private Random random;
+    private int[][] optimalMoves;
     private BufferedReader stdIn;
     public static void main(String[] args) throws IOException {
-        HogSimulator game = new HogSimulator(0, 100, 10);
+        HogSimulator game;
+        switch (args.length) {
+            case 0:
+                game = new HogSimulator(100, 10, 1);
+                break;
+            case 1:
+                game = new HogSimulator(Integer.parseInt(args[0]), 10, 1);
+                break;
+            case 2:
+                game = new HogSimulator(Integer.parseInt(args[0]), Integer.parseInt(args[1]), 1);
+                break;
+            default:
+                game = new HogSimulator(Integer.parseInt(args[0]), Integer.parseInt(args[1]), Integer.parseInt(args[2]));
+        }
         game.runGame();
     }
-    public HogSimulator(int type, int winScore, int maxDice) {
+    public HogSimulator(int winScore, int maxDice, int type) throws IOException {
         this.type = type;
         this.winScore = winScore;
         this.maxDice = maxDice;
         this.random = new Random();
         this.stdIn = new BufferedReader(new InputStreamReader(System.in));
+        if (type > 0) {
+            this.optimalMoves = readOptimalMoves();
+        }
     }
-
+    public int[][] readOptimalMoves() throws IOException {
+        int[][] toReturn = new int[winScore][winScore];
+        BufferedReader fileReader = new BufferedReader(new FileReader("opt_moves.txt"));
+        for (int i = 0; i < winScore; i++) {
+            String line = fileReader.readLine();
+            String[] split = line.split(", ");
+            if (split.length != winScore) {
+                throw new IllegalStateException("opt_moves.txt dimensions do not match input");
+            }
+            for (int j = 0; j < winScore; j++) {
+                toReturn[i][j] = Integer.parseInt(split[j]);
+            }
+        }
+        if (fileReader.readLine() != null) {
+            throw new IllegalStateException("opt_moves.txt dimensions do not match input");
+        }
+        return toReturn;
+    }
     public void runGame() throws IOException {
         int turn = 0;
         int score0 = 0;
@@ -69,7 +101,7 @@ public class HogSimulator {
             }
             return toReturn;
         } else {
-            return 0;
+            return optimalMoves[myScore][otherScore];
         }
     }
     public int[] rollDice(int numRolls) {
